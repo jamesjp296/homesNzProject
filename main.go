@@ -28,6 +28,12 @@ func main() {
 	fmt.Println("The length of first encountered records: ", len(firstEntRecordsMap))
 	display(firstEntRecordsMap)
 
+	/*-------------------Test #3 : Do not insert any of the duplicate records ----------------------*/
+	fmt.Println("-------------Test #3 : Do not insert any of the duplicate records-------------")
+	nonDuplicateRecordMap := GetNonDuplicates(propertiesSlice)
+	display(nonDuplicateRecordMap)
+	fmt.Println("-------------Non duplicate records: ", len(nonDuplicateRecordMap), "-------------")
+
 	log.Printf("Time taken to process results : %v", time.Now().Sub(now).String())
 }
 
