@@ -34,6 +34,17 @@ func main() {
 	display(nonDuplicateRecordMap)
 	fmt.Println("-------------Non duplicate records: ", len(nonDuplicateRecordMap), "-------------")
 
+	/*-------------------Test #4.1: Filter out cheap properties (anything under 400k) ----------------------*/
+	fmt.Println("-------------Test #4.1 : Filter out cheap properties (anything under 400k)-------------")
+	propertyRecordMap := FilterOutCheapProp(propertiesSlice)
+	fmt.Println("FilterOutCheapProp records: ", len(propertyRecordMap))
+	display(propertyRecordMap)
+	/*-------------------Test #4.2 : Remove the pretentious properties  (AVE, CRES, PL)  ----------------------*/
+	fmt.Println("Test #4.2 : Remove the pretentious properties  (AVE, CRES, PL)")
+	propertyTypeRecordMap := FilterPropType(propertiesSlice)
+	fmt.Println("The length of Non duplicate records: ", len(propertyTypeRecordMap))
+	display(propertyTypeRecordMap)
+
 	log.Printf("Time taken to process results : %v", time.Now().Sub(now).String())
 }
 

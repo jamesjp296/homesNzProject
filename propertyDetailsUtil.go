@@ -1,5 +1,7 @@
 package main
 
+import "strings"
+
 type PropertyDetails struct {
 	StreetAddress string
 	Town          string
@@ -57,6 +59,44 @@ func GetNonDuplicates(propertiesSlice []PropertyValue) map[PropertyDetails]int {
 
 		for key := range dupPropertyMap {
 			delete(propertyMap, key)
+		}
+
+	}
+	return propertyMap
+}
+
+func FilterOutCheapProp(propertiesSlice []PropertyValue) map[PropertyDetails]int {
+	var propertyMap = make(map[PropertyDetails]int)
+	for _, prop := range propertiesSlice {
+
+		if prop.Value > 400000 {
+
+			propMapKey := PropertyDetails{
+				StreetAddress: prop.StreetAddress,
+				Town:          prop.Town,
+				ValDate:       prop.ValuationDate,
+			}
+			propertyMap[propMapKey] = prop.Value
+		}
+
+	}
+	return propertyMap
+}
+
+func FilterPropType(propertiesSlice []PropertyValue) map[PropertyDetails]int {
+	var propertyMap = make(map[PropertyDetails]int)
+	for _, prop := range propertiesSlice {
+
+		if !strings.Contains(prop.StreetAddress, "Ave") &&
+			!strings.Contains(prop.StreetAddress, "CRES") &&
+			!strings.Contains(prop.StreetAddress, "PL") {
+
+			propMapKey := PropertyDetails{
+				StreetAddress: prop.StreetAddress,
+				Town:          prop.Town,
+				ValDate:       prop.ValuationDate,
+			}
+			propertyMap[propMapKey] = prop.Value
 		}
 
 	}
