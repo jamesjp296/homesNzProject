@@ -1,4 +1,4 @@
-package model
+package main
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type Property struct {
+type PropertyValue struct {
 	ID            string
 	StreetAddress string
 	Town          string
@@ -16,10 +16,8 @@ type Property struct {
 	Value         int
 }
 
-
-func GetPropertyDetails()([]Property, error){
+func GetPropertyDetails() ([]PropertyValue, error) {
 	var textFileRows []string
-
 
 	file, err := os.Open("properties.txt")
 	//file, err := os.Open("testproperties.txt")
@@ -34,18 +32,18 @@ func GetPropertyDetails()([]Property, error){
 	}
 	file.Close()
 
-	return getPropertyStruct(textFileRows),nil
+	return getPropertyStruct(textFileRows), nil
 
 }
 
-func getPropertyStruct(textFileRows []string) []Property {
-	var propertyDetailsSlice []Property
+func getPropertyStruct(textFileRows []string) []PropertyValue {
+	var propertyDetailsSlice []PropertyValue
 	for i, row := range textFileRows {
 
 		if len(strings.TrimSpace(row)) != 0 && i != 0 {
 
 			column := strings.Split(row, "	")
-			var prop Property
+			var prop PropertyValue
 
 			if len(strings.TrimSpace(column[0])) != 0 {
 				prop.ID = column[0]
