@@ -15,8 +15,8 @@ func main() {
 	}
 
 	//Test #1 : In the case of duplicates, use the last encountered record
-	laslEntRecordsMap := GetLastEntRecords(propertiesSlice)
-	display(laslEntRecordsMap)
+	lastlEntRecordsMap := GetLastEntRecords(propertiesSlice)
+	display(lastlEntRecordsMap)
 
 	//Test #2 : In the case of duplicates, use the first encountered record
 	firstEntRecordsMap := GetFirstEntRecords(propertiesSlice)
