@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -38,9 +39,11 @@ type PropertyDetails struct {
 }
 
 func main() {
+	//To help benchmark request time
+	now := time.Now()
 
 	//Reading the text file
-	propertiesSlice, err := GetPropertyDetails()
+	propertiesSlice, err := getPropertyDetails()
 	if err != nil {
 		log.Panic("Error while opening file")
 	}
@@ -59,70 +62,80 @@ func main() {
 
 	//go routine to get Last Encountered Record
 	go func() {
-		GetLastEntRecords(propertiesSlice, lastEntRcdChan)
+		getLastEntRecords(propertiesSlice, lastEntRcdChan)
 	}()
 
 	//go routine to get First encountered Record
 	go func() {
-		GetFirstEntRecords(propertiesSlice, firstEntRcdChan)
+		getFirstEntRecords(propertiesSlice, firstEntRcdChan)
 	}()
 
 	//go routine to get Non duplicate Records
 	go func() {
-		GetNonDuplicates(propertiesSlice, nonDupRcdChan)
+		getNonDuplicates(propertiesSlice, nonDupRcdChan)
 	}()
 
 	//Receiving Last Encountered Record from channel
 	for lastRcdChanMsg := range lastEntRcdChan {
 		lastRcdChanMsgMap = lastRcdChanMsg
 	}
-
+	//Displaying the Last Encountered records
 	display("Last Encountered record : ", lastRcdChanMsgMap)
 
 	//Receiving First encountered Record from channel
 	for firstRcdMsgChanMap := range firstEntRcdChan {
 		firstRcdMsgMap = firstRcdMsgChanMap
 	}
-
+	//Displaying the First Encountered records
 	display("First Encountered record : ", firstRcdMsgMap)
 
 	//Receiving Non duplicate Records from channel
 	for nonDupRcdMsgChanMap := range nonDupRcdChan {
 		nonDupChanMsgMap = nonDupRcdMsgChanMap
 	}
-
+	//Displaying the Non Duplicate records
 	display("Non Duplicate record : ", firstRcdMsgMap)
 
-	// Concurrent Jobs
+	// Concurrent goroutines for filter operations
 	size := len(nonDupChanMsgMap)
+
+	//getInputChan adds jobs for filter operation
 	chanInputs := getInputChan(nonDupChanMsgMap, size)
 
+	//getfilterOperationChan() performs the filter operation
 	chanOperation1 := getfilterOperationChan(chanInputs, size)
 	chanOperation2 := getfilterOperationChan(chanInputs, size)
+	chanOperation3 := getfilterOperationChan(chanInputs, size)
 
-	chanMergeOperation := merge(chanOperation1, chanOperation2)
+	//merge() merges the output of the filter operations
+	chanMergeOperation := merge(chanOperation1, chanOperation2, chanOperation3)
 
+	//Displaying the filtered records
 	for mergOutput := range chanMergeOperation {
 		fmt.Println("Filtered records : ", mergOutput.StreetAddress, mergOutput.Town, mergOutput.ValuationDate, mergOutput.Value)
 	}
-
+	//To help benchmark request time
+	log.Printf("Time taken to process the results: %v", time.Now().Sub(now).String())
 }
 
+//display() Displays the output to console
 func display(displayMsg string, displayRcdMap map[PropertyDetails]int) {
 	for key, value := range displayRcdMap {
 		fmt.Println(displayMsg, key.StreetAddress, key.Town, key.ValDate, value)
 	}
 }
 
+//inc() increments the counter
 func (counter *count32) inc() int32 {
 	return atomic.AddInt32((*int32)(counter), 1)
 }
 
+//get() gets the counter value
 func (counter *count32) get() int32 {
 	return atomic.LoadInt32((*int32)(counter))
 }
 
-//getInputChan()
+//getInputChan() adds jobs for filter operation
 func getInputChan(nonDupPropMap map[PropertyDetails]int, size int) <-chan PropertyValue {
 
 	input := make(chan PropertyValue, size)
@@ -223,7 +236,7 @@ func merge(outputsChan ...<-chan PropertyValue) <-chan PropertyValue {
 }
 
 //Getting Non duplicate records
-func GetNonDuplicates(propertiesSlice []PropertyValue, chanNonDupRecord chan map[PropertyDetails]int) {
+func getNonDuplicates(propertiesSlice []PropertyValue, chanNonDupRecord chan map[PropertyDetails]int) {
 	var nonDupPropertyMap = make(map[PropertyDetails]int)
 	var dupPropertyMap = make(map[PropertyDetails]int)
 
@@ -250,7 +263,7 @@ func GetNonDuplicates(propertiesSlice []PropertyValue, chanNonDupRecord chan map
 }
 
 //Getting the properties with the First encountered value
-func GetFirstEntRecords(propertiesSlice []PropertyValue, firstEntRcdChan chan map[PropertyDetails]int) {
+func getFirstEntRecords(propertiesSlice []PropertyValue, firstEntRcdChan chan map[PropertyDetails]int) {
 	var firstEntRcdpropertyMap = make(map[PropertyDetails]int)
 
 	for _, firstProp := range propertiesSlice {
@@ -271,7 +284,7 @@ func GetFirstEntRecords(propertiesSlice []PropertyValue, firstEntRcdChan chan ma
 }
 
 //Getting the properties with their last encountered value
-func GetLastEntRecords(propertiesSlice []PropertyValue, lastEntRcdChan chan map[PropertyDetails]int) {
+func getLastEntRecords(propertiesSlice []PropertyValue, lastEntRcdChan chan map[PropertyDetails]int) {
 	var propertyMap = make(map[PropertyDetails]int)
 	for _, prop := range propertiesSlice {
 		propMapKey := PropertyDetails{
@@ -288,7 +301,7 @@ func GetLastEntRecords(propertiesSlice []PropertyValue, lastEntRcdChan chan map[
 
 }
 
-func GetPropertyDetails() ([]PropertyValue, error) {
+func getPropertyDetails() ([]PropertyValue, error) {
 	var textFileRows []string
 
 	file, err := os.Open(textFileName)
