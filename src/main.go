@@ -8,14 +8,15 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 const (
-	textFileName     string = "testproperties.txt"
+	textFileName     string = "properties.txt"
 	AVE              string = "AVE"
 	CRES             string = "CRES"
 	PL               string = "PL"
-	FilterOutLineNum int    = 10
+	FilterOutLineNum int32  = 10
 )
 
 func main() {
@@ -166,9 +167,21 @@ func getfilterOperationChan(chanInputs <-chan PropertyValue, size int) <-chan Pr
 	return output
 }
 
-func isValidRecord(chanInputVal PropertyValue) bool {
+type count32 int32
 
-	if isPropPriceValid(chanInputVal) && isTypePropValid(chanInputVal) {
+var counter count32
+
+func (counter *count32) inc() int32 {
+	return atomic.AddInt32((*int32)(counter), 1)
+}
+
+func (counter *count32) get() int32 {
+	return atomic.LoadInt32((*int32)(counter))
+}
+
+func isValidRecord(chanInputVal PropertyValue) bool {
+	counter.inc()
+	if isPropPriceValid(chanInputVal) && isTypePropValid(chanInputVal) && isNotTenthProp() {
 		return true
 	}
 
@@ -192,6 +205,15 @@ func isTypePropValid(chanInputVal PropertyValue) bool {
 		return true
 	}
 	return false
+}
+
+func isNotTenthProp() bool {
+
+	if counter.get()%FilterOutLineNum == 0 {
+		return false
+	}
+
+	return true
 }
 
 func merge(outputsChan ...<-chan PropertyValue) <-chan PropertyValue {
@@ -221,14 +243,15 @@ func merge(outputsChan ...<-chan PropertyValue) <-chan PropertyValue {
 	return merged
 }
 
+/*
 // Creating a worker
 func worker(jobs <-chan map[PropertyDetails]int, results chan<- map[PropertyDetails]int) {
 	for recNonDupMap := range jobs {
 		results <- performFilterOperations(recNonDupMap)
 	}
 
-}
-
+}*/
+/*
 func performFilterOperations(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
 	fltCpPropertyMap := filterOutChpProp(recNonDupMap)
 	filterTypePropMap := filterTypeProp(fltCpPropertyMap)
@@ -236,7 +259,8 @@ func performFilterOperations(recNonDupMap map[PropertyDetails]int) map[PropertyD
 
 	return filterTenthPropMap
 }
-
+*/
+/*
 func filterTenthProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
 
 	var propertyMap = make(map[PropertyDetails]int)
@@ -260,7 +284,8 @@ func filterTenthProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]i
 	return propertyMap
 
 }
-
+*/
+/*
 func filterTypeProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
 
 	var propertyMap = make(map[PropertyDetails]int)
@@ -282,7 +307,8 @@ func filterTypeProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]in
 	return propertyMap
 
 }
-
+*/
+/*
 func filterOutChpProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
 
 	//filter out cheap property
@@ -303,7 +329,7 @@ func filterOutChpProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]
 	return fltCpPropertyMap
 
 }
-
+*/
 //Getting Non duplicate records
 func GetNonDuplicates(propertiesSlice []PropertyValue, chanNonDupRecord chan map[PropertyDetails]int) {
 	var nonDupPropertyMap = make(map[PropertyDetails]int)
