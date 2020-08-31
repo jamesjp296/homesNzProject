@@ -115,6 +115,35 @@ func worker(jobs <-chan map[PropertyDetails]int, results chan<- map[PropertyDeta
 }
 
 func performFilterOperations(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
+	fltCpPropertyMap := filterOutChpProp(recNonDupMap)
+	filterTypePropMap := filterTypeProp(fltCpPropertyMap)
+
+	return filterTypePropMap
+}
+
+func filterTypeProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
+
+	var propertyMap = make(map[PropertyDetails]int)
+	for key, val := range recNonDupMap {
+
+		if !strings.Contains(key.StreetAddress, "AVE") &&
+			!strings.Contains(key.StreetAddress, "CRES") &&
+			!strings.Contains(key.StreetAddress, "PL") {
+
+			propMapKey := PropertyDetails{
+				StreetAddress: key.StreetAddress,
+				Town:          key.Town,
+				ValDate:       key.ValDate,
+			}
+			propertyMap[propMapKey] = val
+		}
+
+	}
+	return propertyMap
+
+}
+
+func filterOutChpProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
 
 	//filter out cheap property
 	var fltCpPropertyMap = make(map[PropertyDetails]int)
