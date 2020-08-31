@@ -117,8 +117,33 @@ func worker(jobs <-chan map[PropertyDetails]int, results chan<- map[PropertyDeta
 func performFilterOperations(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
 	fltCpPropertyMap := filterOutChpProp(recNonDupMap)
 	filterTypePropMap := filterTypeProp(fltCpPropertyMap)
+	filterTenthPropMap := filterTenthProp(filterTypePropMap)
 
-	return filterTypePropMap
+	return filterTenthPropMap
+}
+
+func filterTenthProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
+
+	var propertyMap = make(map[PropertyDetails]int)
+	i := 1
+	for key, val := range recNonDupMap {
+
+		if i != 10 {
+			propMapKey := PropertyDetails{
+				StreetAddress: key.StreetAddress,
+				Town:          key.Town,
+				ValDate:       key.ValDate,
+			}
+			propertyMap[propMapKey] = val
+		} else {
+			i = 0
+		}
+
+		i++
+
+	}
+	return propertyMap
+
 }
 
 func filterTypeProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
