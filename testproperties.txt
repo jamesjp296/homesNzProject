@@ -1,0 +1,6 @@
+ID	Street address	Town	Valuation date	Value
+1	1 Northburn RD	WANAKA	1/01/15	280000
+2	1 Mount Ida PL	WANAKA	1/01/15	280000
+3	1 Mount Linton AVE	WANAKA	1/01/15	780000
+1	1 Northburn RD	WANAKA	1/01/15	330000
+2	1 Mount Ida PL	WANAKA	1/01/15	330000
