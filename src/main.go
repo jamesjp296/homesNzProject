@@ -89,7 +89,7 @@ func main() {
 	chanMergeOperation := merge(chanOperation1, chanOperation2)
 
 	for mergOutput := range chanMergeOperation {
-		fmt.Println("Merge output", mergOutput)
+		fmt.Println("Filtered Records : ", mergOutput.StreetAddress, mergOutput.Town, mergOutput.ValuationDate, mergOutput.Value)
 	}
 
 	/*
