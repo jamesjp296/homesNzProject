@@ -1,4 +1,4 @@
-package main
+/*package main
 
 type PropertyValue struct {
 	ID            string
@@ -13,3 +13,4 @@ type PropertyDetails struct {
 	Town          string
 	ValDate       string
 }
+*/

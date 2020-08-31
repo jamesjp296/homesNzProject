@@ -19,6 +19,24 @@ const (
 	FilterOutLineNum int32  = 10
 )
 
+type count32 int32
+
+var counter count32
+
+type PropertyValue struct {
+	ID            string
+	StreetAddress string
+	Town          string
+	ValuationDate string
+	Value         int
+}
+
+type PropertyDetails struct {
+	StreetAddress string
+	Town          string
+	ValDate       string
+}
+
 func main() {
 
 	//Reading the text file
@@ -92,43 +110,6 @@ func main() {
 		fmt.Println("Filtered Records : ", mergOutput.StreetAddress, mergOutput.Town, mergOutput.ValuationDate, mergOutput.Value)
 	}
 
-	/*
-		//Concurrent Jobs
-		jobs := make(chan map[PropertyDetails]int, 50)
-		results := make(chan map[PropertyDetails]int, 50)
-		retFilterRcdPropMap := make(map[PropertyDetails]int)
-
-		splitPropMap := make(map[int]map[PropertyDetails]int)
-		splitResultsMap := make(map[int]map[PropertyDetails]int)
-
-		for i := 0; i < 3; i++ {
-			splitPropMap[i] = nonDupChanMsgMap
-		}
-
-		// Performing go routine on chunks
-		go worker(jobs, results)
-		go worker(jobs, results)
-
-		var numOfJobs = len(splitPropMap)
-
-		for _, todoJobMap := range splitPropMap {
-			jobs <- todoJobMap
-		}
-		close(jobs)
-
-		for i := 0; i < numOfJobs; i++ {
-			splitResultsMap[i] = <-results
-		}
-
-		for _, filterRcdMsgChanMap := range splitResultsMap {
-			retFilterRcdPropMap = filterRcdMsgChanMap
-
-			for key, value := range retFilterRcdPropMap {
-				fmt.Println("Filtered record : ", key.StreetAddress, key.Town, key.ValDate, value)
-			}
-
-		} */
-
 }
 
 //getInputChan()
@@ -166,10 +147,6 @@ func getfilterOperationChan(chanInputs <-chan PropertyValue, size int) <-chan Pr
 
 	return output
 }
-
-type count32 int32
-
-var counter count32
 
 func (counter *count32) inc() int32 {
 	return atomic.AddInt32((*int32)(counter), 1)
@@ -243,93 +220,6 @@ func merge(outputsChan ...<-chan PropertyValue) <-chan PropertyValue {
 	return merged
 }
 
-/*
-// Creating a worker
-func worker(jobs <-chan map[PropertyDetails]int, results chan<- map[PropertyDetails]int) {
-	for recNonDupMap := range jobs {
-		results <- performFilterOperations(recNonDupMap)
-	}
-
-}*/
-/*
-func performFilterOperations(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
-	fltCpPropertyMap := filterOutChpProp(recNonDupMap)
-	filterTypePropMap := filterTypeProp(fltCpPropertyMap)
-	filterTenthPropMap := filterTenthProp(filterTypePropMap)
-
-	return filterTenthPropMap
-}
-*/
-/*
-func filterTenthProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
-
-	var propertyMap = make(map[PropertyDetails]int)
-	i := 1
-	for key, val := range recNonDupMap {
-
-		if i != FilterOutLineNum {
-			propMapKey := PropertyDetails{
-				StreetAddress: key.StreetAddress,
-				Town:          key.Town,
-				ValDate:       key.ValDate,
-			}
-			propertyMap[propMapKey] = val
-		} else {
-			i = 0
-		}
-
-		i++
-
-	}
-	return propertyMap
-
-}
-*/
-/*
-func filterTypeProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
-
-	var propertyMap = make(map[PropertyDetails]int)
-	for key, val := range recNonDupMap {
-
-		if !strings.Contains(key.StreetAddress, AVE) &&
-			!strings.Contains(key.StreetAddress, CRES) &&
-			!strings.Contains(key.StreetAddress, PL) {
-
-			propMapKey := PropertyDetails{
-				StreetAddress: key.StreetAddress,
-				Town:          key.Town,
-				ValDate:       key.ValDate,
-			}
-			propertyMap[propMapKey] = val
-		}
-
-	}
-	return propertyMap
-
-}
-*/
-/*
-func filterOutChpProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
-
-	//filter out cheap property
-	var fltCpPropertyMap = make(map[PropertyDetails]int)
-
-	for propKey, propValue := range recNonDupMap {
-
-		if propValue > 400000 {
-			propMapKey := PropertyDetails{
-				StreetAddress: propKey.StreetAddress,
-				Town:          propKey.Town,
-				ValDate:       propKey.ValDate,
-			}
-			fltCpPropertyMap[propMapKey] = propValue
-		}
-	}
-
-	return fltCpPropertyMap
-
-}
-*/
 //Getting Non duplicate records
 func GetNonDuplicates(propertiesSlice []PropertyValue, chanNonDupRecord chan map[PropertyDetails]int) {
 	var nonDupPropertyMap = make(map[PropertyDetails]int)
