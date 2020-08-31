@@ -7,10 +7,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
-	textFileName     string = "properties.txt"
+	textFileName     string = "testproperties.txt"
 	AVE              string = "AVE"
 	CRES             string = "CRES"
 	PL               string = "PL"
@@ -77,42 +78,123 @@ func main() {
 		fmt.Println("Non Dup record : ", key.StreetAddress, key.Town, key.ValDate, value)
 	}
 
-	//Concurrent Jobs
-	jobs := make(chan map[PropertyDetails]int, 50)
-	results := make(chan map[PropertyDetails]int, 50)
-	retFilterRcdPropMap := make(map[PropertyDetails]int)
+	// Concurrent Jobs
+	size := len(nonDupChanMsgMap)
+	chanInputs := getInputChan(nonDupChanMsgMap, size)
 
-	splitPropMap := make(map[int]map[PropertyDetails]int)
-	splitResultsMap := make(map[int]map[PropertyDetails]int)
+	chanOperation1 := getfilterOperationChan(chanInputs, size)
+	chanOperation2 := getfilterOperationChan(chanInputs, size)
 
-	for i := 0; i < 3; i++ {
-		splitPropMap[i] = nonDupChanMsgMap
+	chanMergeOperation := merge(chanOperation1, chanOperation2)
+
+	for mergOutput := range chanMergeOperation {
+		fmt.Println("Merge output", mergOutput)
 	}
 
-	// Performing go routine on chunks
-	go worker(jobs, results)
-	go worker(jobs, results)
+	/*
+		//Concurrent Jobs
+		jobs := make(chan map[PropertyDetails]int, 50)
+		results := make(chan map[PropertyDetails]int, 50)
+		retFilterRcdPropMap := make(map[PropertyDetails]int)
 
-	var numOfJobs = len(splitPropMap)
+		splitPropMap := make(map[int]map[PropertyDetails]int)
+		splitResultsMap := make(map[int]map[PropertyDetails]int)
 
-	for _, todoJobMap := range splitPropMap {
-		jobs <- todoJobMap
-	}
-	close(jobs)
-
-	for i := 0; i < numOfJobs; i++ {
-		splitResultsMap[i] = <-results
-	}
-
-	for _, filterRcdMsgChanMap := range splitResultsMap {
-		retFilterRcdPropMap = filterRcdMsgChanMap
-
-		for key, value := range retFilterRcdPropMap {
-			fmt.Println("Filtered record : ", key.StreetAddress, key.Town, key.ValDate, value)
+		for i := 0; i < 3; i++ {
+			splitPropMap[i] = nonDupChanMsgMap
 		}
 
+		// Performing go routine on chunks
+		go worker(jobs, results)
+		go worker(jobs, results)
+
+		var numOfJobs = len(splitPropMap)
+
+		for _, todoJobMap := range splitPropMap {
+			jobs <- todoJobMap
+		}
+		close(jobs)
+
+		for i := 0; i < numOfJobs; i++ {
+			splitResultsMap[i] = <-results
+		}
+
+		for _, filterRcdMsgChanMap := range splitResultsMap {
+			retFilterRcdPropMap = filterRcdMsgChanMap
+
+			for key, value := range retFilterRcdPropMap {
+				fmt.Println("Filtered record : ", key.StreetAddress, key.Town, key.ValDate, value)
+			}
+
+		} */
+
+}
+
+//getInputChan()
+func getInputChan(nonDupPropMap map[PropertyDetails]int, size int) <-chan PropertyValue {
+
+	input := make(chan PropertyValue, size)
+
+	go func() {
+		for propKey, propVal := range nonDupPropMap {
+			propValStr := PropertyValue{
+				StreetAddress: propKey.StreetAddress,
+				Town:          propKey.Town,
+				ValuationDate: propKey.ValDate,
+				Value:         propVal,
+			}
+			input <- propValStr
+		}
+		close(input)
+	}()
+	return input
+}
+
+//getfilterOperationChan(chanInputs)
+func getfilterOperationChan(chanInputs <-chan PropertyValue, size int) <-chan PropertyValue {
+	output := make(chan PropertyValue, size)
+
+	go func() {
+		for chanInputVal := range chanInputs {
+			if isValidRecord(chanInputVal) {
+				output <- chanInputVal
+			}
+		}
+		close(output)
+	}()
+
+	return output
+}
+
+func isValidRecord(chanInputVal PropertyValue) bool {
+	return true
+}
+
+func merge(outputsChan ...<-chan PropertyValue) <-chan PropertyValue {
+
+	var wg sync.WaitGroup
+
+	merged := make(chan PropertyValue, 100)
+
+	wg.Add(len(outputsChan))
+
+	mergeOutput := func(optsChan <-chan PropertyValue) {
+		for propValStr := range optsChan {
+			merged <- propValStr
+		}
+		wg.Done()
 	}
 
+	for _, optsChan := range outputsChan {
+		go mergeOutput(optsChan)
+	}
+
+	go func() {
+		wg.Wait()
+		close(merged)
+	}()
+
+	return merged
 }
 
 // Creating a worker
