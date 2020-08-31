@@ -9,58 +9,66 @@ import (
 	"strings"
 )
 
+const (
+	textFileName     string = "properties.txt"
+	AVE              string = "AVE"
+	CRES             string = "CRES"
+	PL               string = "PL"
+	FilterOutLineNum int    = 10
+)
+
 func main() {
 
 	//Reading the text file
-	propertiesSlice, err := GetNewpropertyDetails()
+	propertiesSlice, err := GetPropertyDetails()
 	if err != nil {
 		log.Panic("Error while opening file")
 	}
 
-	//Last Encountered Record
+	//Creating channels to get Last Encountered Record
 	lastEntRcdChan := make(chan map[PropertyDetails]int)
 	lastRcdChanMsgMap := make(map[PropertyDetails]int)
 
-	//First encountered Record
+	//Creating channels to get First encountered Record
 	firstEntRcdChan := make(chan map[PropertyDetails]int)
 	fRChanMsgMap := make(map[PropertyDetails]int)
 
-	// Non duplicate Records
+	//Creating channels to get Non duplicate Records
 	nonDupRcdChan := make(chan map[PropertyDetails]int)
 	nonDupChanMsgMap := make(map[PropertyDetails]int)
 
-	//Last Encountered Record
+	//go routine to get Last Encountered Record
 	go func() {
 		GetLastEntRecords(propertiesSlice, lastEntRcdChan)
 	}()
 
-	//First encountered Record
+	//go routine to get First encountered Record
 	go func() {
 		GetFirstEntRecords(propertiesSlice, firstEntRcdChan)
 	}()
 
-	// Non duplicate Records
+	//go routine to get Non duplicate Records
 	go func() {
 		GetNonDuplicates(propertiesSlice, nonDupRcdChan)
 	}()
 
-	//Last Encountered Record
+	//Receiving Last Encountered Record from channel
 	for lastRcdChanMsg := range lastEntRcdChan {
 		lastRcdChanMsgMap = lastRcdChanMsg
 	}
 	for key, value := range lastRcdChanMsgMap {
-		fmt.Println("Last Encontered record : ", key.StreetAddress, key.Town, key.ValDate, value)
+		fmt.Println("Last Encountered record : ", key.StreetAddress, key.Town, key.ValDate, value)
 	}
 
-	//First encountered Record
+	//Receiving First encountered Record from channel
 	for firstRcdMsgChanMap := range firstEntRcdChan {
 		fRChanMsgMap = firstRcdMsgChanMap
 	}
 	for fRChanMsgKey, fRChanMsgVal := range fRChanMsgMap {
-		fmt.Println("First Encontered record : ", fRChanMsgKey.StreetAddress, fRChanMsgKey.Town, fRChanMsgKey.ValDate, fRChanMsgVal)
+		fmt.Println("First Encountered record : ", fRChanMsgKey.StreetAddress, fRChanMsgKey.Town, fRChanMsgKey.ValDate, fRChanMsgVal)
 	}
 
-	// Non duplicate Records
+	//Receiving Non duplicate Records from channel
 	for nonDupRcdMsgChanMap := range nonDupRcdChan {
 		nonDupChanMsgMap = nonDupRcdMsgChanMap
 	}
@@ -81,6 +89,7 @@ func main() {
 		splitPropMap[i] = nonDupChanMsgMap
 	}
 
+	// Performing go routine on chunks
 	go worker(jobs, results)
 	go worker(jobs, results)
 
@@ -128,7 +137,7 @@ func filterTenthProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]i
 	i := 1
 	for key, val := range recNonDupMap {
 
-		if i != 10 {
+		if i != FilterOutLineNum {
 			propMapKey := PropertyDetails{
 				StreetAddress: key.StreetAddress,
 				Town:          key.Town,
@@ -151,9 +160,9 @@ func filterTypeProp(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]in
 	var propertyMap = make(map[PropertyDetails]int)
 	for key, val := range recNonDupMap {
 
-		if !strings.Contains(key.StreetAddress, "AVE") &&
-			!strings.Contains(key.StreetAddress, "CRES") &&
-			!strings.Contains(key.StreetAddress, "PL") {
+		if !strings.Contains(key.StreetAddress, AVE) &&
+			!strings.Contains(key.StreetAddress, CRES) &&
+			!strings.Contains(key.StreetAddress, PL) {
 
 			propMapKey := PropertyDetails{
 				StreetAddress: key.StreetAddress,
@@ -213,7 +222,7 @@ func GetNonDuplicates(propertiesSlice []PropertyValue, chanNonDupRecord chan map
 	}
 	chanNonDupRecord <- nonDupPropertyMap
 	close(chanNonDupRecord)
-	//return propertyMap
+
 }
 
 //Getting the properties with the First encountered value
@@ -252,14 +261,13 @@ func GetLastEntRecords(propertiesSlice []PropertyValue, lastEntRcdChan chan map[
 	}
 	lastEntRcdChan <- propertyMap
 	close(lastEntRcdChan)
-	//return propertyMap
+
 }
 
-func GetNewpropertyDetails() ([]PropertyValue, error) {
+func GetPropertyDetails() ([]PropertyValue, error) {
 	var textFileRows []string
 
-	file, err := os.Open("properties.txt")
-	//file, err := os.Open("testproperties.txt")
+	file, err := os.Open(textFileName)
 	if err != nil {
 		return nil, err
 	}
