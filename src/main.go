@@ -69,6 +69,70 @@ func main() {
 		fmt.Println("Non Dup record : ", key.StreetAddress, key.Town, key.ValDate, value)
 	}
 
+	//Concurrent Jobs
+	jobs := make(chan map[PropertyDetails]int, 50)
+	results := make(chan map[PropertyDetails]int, 50)
+	retFilterRcdPropMap := make(map[PropertyDetails]int)
+
+	splitPropMap := make(map[int]map[PropertyDetails]int)
+	splitResultsMap := make(map[int]map[PropertyDetails]int)
+
+	for i := 0; i < 3; i++ {
+		splitPropMap[i] = nonDupChanMsgMap
+	}
+
+	go worker(jobs, results)
+	go worker(jobs, results)
+
+	var numOfJobs = len(splitPropMap)
+
+	for _, todoJobMap := range splitPropMap {
+		jobs <- todoJobMap
+	}
+	close(jobs)
+
+	for i := 0; i < numOfJobs; i++ {
+		splitResultsMap[i] = <-results
+	}
+
+	for _, filterRcdMsgChanMap := range splitResultsMap {
+		retFilterRcdPropMap = filterRcdMsgChanMap
+
+		for key, value := range retFilterRcdPropMap {
+			fmt.Println("Filtered record : ", key.StreetAddress, key.Town, key.ValDate, value)
+		}
+
+	}
+
+}
+
+// Creating a worker
+func worker(jobs <-chan map[PropertyDetails]int, results chan<- map[PropertyDetails]int) {
+	for recNonDupMap := range jobs {
+		results <- performFilterOperations(recNonDupMap)
+	}
+
+}
+
+func performFilterOperations(recNonDupMap map[PropertyDetails]int) map[PropertyDetails]int {
+
+	//filter out cheap property
+	var fltCpPropertyMap = make(map[PropertyDetails]int)
+
+	for propKey, propValue := range recNonDupMap {
+
+		if propValue > 400000 {
+			propMapKey := PropertyDetails{
+				StreetAddress: propKey.StreetAddress,
+				Town:          propKey.Town,
+				ValDate:       propKey.ValDate,
+			}
+			fltCpPropertyMap[propMapKey] = propValue
+		}
+	}
+
+	return fltCpPropertyMap
+
 }
 
 //Getting Non duplicate records
