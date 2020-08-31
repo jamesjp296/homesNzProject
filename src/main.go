@@ -167,7 +167,31 @@ func getfilterOperationChan(chanInputs <-chan PropertyValue, size int) <-chan Pr
 }
 
 func isValidRecord(chanInputVal PropertyValue) bool {
-	return true
+
+	if isPropPriceValid(chanInputVal) && isTypePropValid(chanInputVal) {
+		return true
+	}
+
+	return false
+}
+
+func isPropPriceValid(chanInputVal PropertyValue) bool {
+
+	if chanInputVal.Value > 400000 {
+		return true
+	}
+
+	return false
+}
+
+func isTypePropValid(chanInputVal PropertyValue) bool {
+
+	if !strings.Contains(chanInputVal.StreetAddress, AVE) &&
+		!strings.Contains(chanInputVal.StreetAddress, CRES) &&
+		!strings.Contains(chanInputVal.StreetAddress, PL) {
+		return true
+	}
+	return false
 }
 
 func merge(outputsChan ...<-chan PropertyValue) <-chan PropertyValue {
