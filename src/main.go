@@ -51,7 +51,7 @@ func main() {
 
 	//Creating channels to get First encountered Record
 	firstEntRcdChan := make(chan map[PropertyDetails]int)
-	fRChanMsgMap := make(map[PropertyDetails]int)
+	firstRcdMsgMap := make(map[PropertyDetails]int)
 
 	//Creating channels to get Non duplicate Records
 	nonDupRcdChan := make(chan map[PropertyDetails]int)
@@ -76,26 +76,22 @@ func main() {
 	for lastRcdChanMsg := range lastEntRcdChan {
 		lastRcdChanMsgMap = lastRcdChanMsg
 	}
-	for key, value := range lastRcdChanMsgMap {
-		fmt.Println("Last Encountered record : ", key.StreetAddress, key.Town, key.ValDate, value)
-	}
+
+	display("Last Encountered record : ", lastRcdChanMsgMap)
 
 	//Receiving First encountered Record from channel
 	for firstRcdMsgChanMap := range firstEntRcdChan {
-		fRChanMsgMap = firstRcdMsgChanMap
+		firstRcdMsgMap = firstRcdMsgChanMap
 	}
-	for fRChanMsgKey, fRChanMsgVal := range fRChanMsgMap {
-		fmt.Println("First Encountered record : ", fRChanMsgKey.StreetAddress, fRChanMsgKey.Town, fRChanMsgKey.ValDate, fRChanMsgVal)
-	}
+
+	display("First Encountered record : ", firstRcdMsgMap)
 
 	//Receiving Non duplicate Records from channel
 	for nonDupRcdMsgChanMap := range nonDupRcdChan {
 		nonDupChanMsgMap = nonDupRcdMsgChanMap
 	}
 
-	for key, value := range nonDupChanMsgMap {
-		fmt.Println("Non Dup record : ", key.StreetAddress, key.Town, key.ValDate, value)
-	}
+	display("Non Duplicate record : ", firstRcdMsgMap)
 
 	// Concurrent Jobs
 	size := len(nonDupChanMsgMap)
@@ -107,9 +103,23 @@ func main() {
 	chanMergeOperation := merge(chanOperation1, chanOperation2)
 
 	for mergOutput := range chanMergeOperation {
-		fmt.Println("Filtered Records : ", mergOutput.StreetAddress, mergOutput.Town, mergOutput.ValuationDate, mergOutput.Value)
+		fmt.Println("Filtered records : ", mergOutput.StreetAddress, mergOutput.Town, mergOutput.ValuationDate, mergOutput.Value)
 	}
 
+}
+
+func display(displayMsg string, displayRcdMap map[PropertyDetails]int) {
+	for key, value := range displayRcdMap {
+		fmt.Println(displayMsg, key.StreetAddress, key.Town, key.ValDate, value)
+	}
+}
+
+func (counter *count32) inc() int32 {
+	return atomic.AddInt32((*int32)(counter), 1)
+}
+
+func (counter *count32) get() int32 {
+	return atomic.LoadInt32((*int32)(counter))
 }
 
 //getInputChan()
@@ -146,14 +156,6 @@ func getfilterOperationChan(chanInputs <-chan PropertyValue, size int) <-chan Pr
 	}()
 
 	return output
-}
-
-func (counter *count32) inc() int32 {
-	return atomic.AddInt32((*int32)(counter), 1)
-}
-
-func (counter *count32) get() int32 {
-	return atomic.LoadInt32((*int32)(counter))
 }
 
 func isValidRecord(chanInputVal PropertyValue) bool {
