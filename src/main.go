@@ -94,7 +94,7 @@ func main() {
 		nonDupChanMsgMap = nonDupRcdMsgChanMap
 	}
 	//Displaying the Non Duplicate records
-	display("Non Duplicate record : ", firstRcdMsgMap)
+	display("Non Duplicate record : ", nonDupChanMsgMap)
 
 	// Concurrent goroutines for filter operations
 	size := len(nonDupChanMsgMap)
